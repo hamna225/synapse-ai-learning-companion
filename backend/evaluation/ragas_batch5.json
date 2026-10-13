@@ -1,0 +1,47 @@
+{
+  "framework": "RAGAS",
+  "ragas_version": "0.4.3",
+  "run_at": "2026-10-12T15:06:38.762342+00:00",
+  "material_id": "material_58e6a8a98719",
+  "evaluator_model": "openai/gpt-oss-120b",
+  "scored_answerable_cases": 0,
+  "metrics_mean": {
+    "faithfulness": null,
+    "answer_relevancy": null,
+    "context_precision": null,
+    "context_recall": null
+  },
+  "citation_location_hit_rate": null,
+  "off_material_flag_rate": 0.5,
+  "off_material_check": "Deterministic phrase check for an explicit outside-material or not-covered flag; not a RAGAS metric.",
+  "cases": [
+    {
+      "id": "off03",
+      "kind": "off_material",
+      "question": "Write Python code that trains a random forest on the Iris dataset.",
+      "answer": "To train a Random Forest on the Iris dataset you can use scikit\u2011learn, which is the library recommended in the material for practicing machine learning tasks.  \nThe Iris dataset is included in scikit\u2011learn\u2019s `datasets` module, and a Random Forest is an ensemble of decision trees\u2014each tree splits the data with yes/no questions, as described in the decision\u2011tree section of the material [2].\n\n```python\n# 1. Import the necessary modules\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import accuracy_score\n\n# 2. Load the Iris data\niris = load_iris()\nX, y = iris.data, iris.target\n\n# 3. Split into training and test sets\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42, stratify=y\n)\n\n# 4. Create the Random Forest model\nrf = RandomForestClassifier(\n    n_estimators=100,          # number of trees\n    max_depth=None,            # let trees grow until pure\n    random_state=42\n)\n\n# 5. Train the model\nrf.fit(X_train, y_train)\n\n# 6. Predict on the test set\ny_pred = rf.predict(X_test)\n\n# 7. Evaluate accuracy\nprint(f\"Accuracy: {accuracy_score(y_test, y_pred):.2f}\")\n```\n\n**Explanation of the steps**\n\n- **Loading data** \u2013 `load_iris()` pulls the classic Iris dataset, which contains 150 samples with four features each.  \n- **Train/test split** \u2013 `train_test_split` reserves 20\u202f% of the data for evaluating the model, ensuring the split is stratified so each class is represented proportionally.  \n- **Random Forest** \u2013 `RandomForestClassifier` builds an ensemble of decision trees; each tree learns patterns by asking yes/no questions about the features, as described in the decision\u2011tree material [2].  \n- **Training** \u2013 `fit` trains all trees on the training data.  \n- **Prediction & evaluation** \u2013 `predict` generates class labels for the test set, and `accuracy_score` measures how many predictions match the true labels.\n\nRunning this script will output the accuracy of the Random Forest on the Iris test set. Feel free to experiment with parameters such as `n_estimators` or `max_depth` to see how they affect performance.",
+      "retrieved_locations": [
+        20,
+        15,
+        1
+      ],
+      "expected_locations": [],
+      "citation_location_hit": false,
+      "unsupported_query_flagged": false
+    },
+    {
+      "id": "off04",
+      "kind": "off_material",
+      "question": "What are the current prices of NVIDIA and AMD shares?",
+      "answer": "I don\u2019t have any information in the supplied material about the current market prices of NVIDIA or AMD shares, so I can\u2019t verify those figures from the document.  \n\n**General explanation (outside the uploaded material):**  \n- Stock prices fluctuate throughout the trading day and are best checked in real time on financial news sites, brokerage platforms, or market data services such as Yahoo Finance, Google Finance, Bloomberg, or the official exchanges (NASDAQ, NYSE).  \n- You can also view the latest price on the company\u2019s investor relations page or through a financial app that provides live market data.",
+      "retrieved_locations": [
+        11,
+        7,
+        19
+      ],
+      "expected_locations": [],
+      "citation_location_hit": false,
+      "unsupported_query_flagged": true
+    }
+  ]
+}

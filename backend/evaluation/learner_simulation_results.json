@@ -1,0 +1,65 @@
+{
+  "method": "Monte Carlo synthetic responses updated with the production BKT function; weakest estimated topic is selected each session.",
+  "seed": 2026,
+  "replicates_per_profile": 100,
+  "sessions_per_profile": 5,
+  "questions_per_session": 5,
+  "assumption": "After each focused practice session, that topic's synthetic response probability increases by 4 percentage points, capped at 95%.",
+  "results": [
+    {
+      "profile": "balanced",
+      "replicates": 100,
+      "sessions_per_replicate": 5,
+      "questions_per_replicate": 25,
+      "topic_session_selections_across_replicates": {
+        "Foundations": 144,
+        "Supervised": 178,
+        "Reinforcement": 178
+      },
+      "mastery_end_percent": {
+        "Foundations": 81.2,
+        "Supervised": 84.5,
+        "Reinforcement": 74.3
+      },
+      "mean_estimated_mastery_gain_points": 60.0,
+      "simulated_accuracy_percent": 52.4
+    },
+    {
+      "profile": "advanced",
+      "replicates": 100,
+      "sessions_per_replicate": 5,
+      "questions_per_replicate": 25,
+      "topic_session_selections_across_replicates": {
+        "Foundations": 140,
+        "Supervised": 160,
+        "Reinforcement": 200
+      },
+      "mastery_end_percent": {
+        "Foundations": 99.0,
+        "Supervised": 96.9,
+        "Reinforcement": 93.8
+      },
+      "mean_estimated_mastery_gain_points": 76.6,
+      "simulated_accuracy_percent": 74.4
+    },
+    {
+      "profile": "needs_foundations",
+      "replicates": 100,
+      "sessions_per_replicate": 5,
+      "questions_per_replicate": 25,
+      "topic_session_selections_across_replicates": {
+        "Foundations": 155,
+        "Supervised": 169,
+        "Reinforcement": 176
+      },
+      "mastery_end_percent": {
+        "Foundations": 63.5,
+        "Supervised": 58.7,
+        "Reinforcement": 47.4
+      },
+      "mean_estimated_mastery_gain_points": 36.5,
+      "simulated_accuracy_percent": 33.8
+    }
+  ],
+  "question_repetition_rate": "Not measured by this learner-model simulation; it does not call the live question generator."
+}

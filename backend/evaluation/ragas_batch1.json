@@ -1,0 +1,61 @@
+{
+  "framework": "RAGAS",
+  "ragas_version": "0.4.3",
+  "run_at": "2026-10-12T14:49:32.633088+00:00",
+  "material_id": "material_58e6a8a98719",
+  "evaluator_model": "openai/gpt-oss-120b",
+  "scored_answerable_cases": 2,
+  "metrics_mean": {
+    "faithfulness": 0.2917,
+    "answer_relevancy": 0.8681,
+    "context_precision": 0.5,
+    "context_recall": 0.5
+  },
+  "citation_location_hit_rate": 0.5,
+  "off_material_flag_rate": null,
+  "off_material_check": "Deterministic phrase check for an explicit outside-material or not-covered flag; not a RAGAS metric.",
+  "cases": [
+    {
+      "id": "ml03",
+      "kind": "answerable",
+      "question": "Name the three main types of machine learning and briefly describe each.",
+      "answer": "**General explanation (outside the uploaded material):**\n\n- **Supervised learning**  \n  The algorithm is trained on labeled data, meaning each input example is paired with the correct output. The model learns to map inputs to outputs and is evaluated by how accurately it predicts the labels on new data.\n\n- **Unsupervised learning**  \n  The algorithm works with unlabeled data. It seeks to discover hidden structure or patterns, such as grouping similar data points (clustering) or reducing dimensionality (principal component analysis).\n\n- **Reinforcement learning**  \n  An agent learns by interacting with an environment, receiving rewards or penalties for actions. The goal is to learn a policy that maximizes cumulative reward over time.",
+      "retrieved_locations": [
+        2,
+        3,
+        1
+      ],
+      "expected_locations": [
+        6
+      ],
+      "citation_location_hit": false,
+      "metrics": {
+        "faithfulness": 0.08333333333333333,
+        "answer_relevancy": 0.8902143133007464,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "id": "ml06",
+      "kind": "answerable",
+      "question": "In reinforcement learning, what are a policy and a reward?",
+      "answer": "In reinforcement learning, a **reward** is the feedback signal that tells the agent how good or bad an action was in a given state. It is the numeric value the agent receives after taking an action, and the agent\u2019s goal is to maximize the cumulative reward over time.  \n\nA **policy** is the strategy the agent follows to choose actions. It maps the current state of the environment to an action (or a probability distribution over actions) that the agent will execute. The policy is what the agent learns and improves through trial and error, guided by the rewards it receives.  \n\n[1]",
+      "retrieved_locations": [
+        9,
+        6,
+        4
+      ],
+      "expected_locations": [
+        9
+      ],
+      "citation_location_hit": true,
+      "metrics": {
+        "faithfulness": 0.5,
+        "answer_relevancy": 0.845888748470249,
+        "context_precision": 0.99999999995,
+        "context_recall": 1.0
+      }
+    }
+  ]
+}

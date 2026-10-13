@@ -1,0 +1,81 @@
+{
+  "framework": "RAGAS",
+  "ragas_version": "0.4.3",
+  "run_at": "2026-10-12T15:18:07.174682+00:00",
+  "material_id": "material_58e6a8a98719",
+  "evaluator_model": "openai/gpt-oss-120b",
+  "scored_answerable_cases": 2,
+  "metrics_mean": {
+    "faithfulness": 0.5,
+    "answer_relevancy": 0.8472,
+    "context_precision": 0.5375,
+    "context_recall": 1.0
+  },
+  "citation_location_hit_rate": 0.5,
+  "off_material_flag_rate": 1.0,
+  "off_material_check": "Deterministic phrase check for an explicit outside-material or not-covered flag; not a RAGAS metric.",
+  "cases": [
+    {
+      "id": "ml03",
+      "kind": "answerable",
+      "question": "Name the three main types of machine learning and briefly describe each.",
+      "answer": "- **Supervised learning** \u2013 learns from labeled examples, where each input is paired with the correct output (e.g., predicting house prices)\u202f[4].  \n- **Unsupervised learning** \u2013 discovers hidden structure in unlabeled data, such as grouping customers into clusters\u202f[4].  \n- **Reinforcement learning** \u2013 learns by trial and error, guided by rewards and penalties, often used in game\u2011playing agents\u202f[4].",
+      "retrieved_locations": [
+        2,
+        3,
+        1,
+        6,
+        20
+      ],
+      "expected_locations": [
+        6
+      ],
+      "citation_location_hit": true,
+      "metrics": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.8902143133007464,
+        "context_precision": 0.32499999998375,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "cite05",
+      "kind": "citation_check",
+      "question": "Which slide defines accuracy, precision, recall, and F1 score?",
+      "answer": "The definitions of accuracy, precision, recall, and F1 score are provided on **Slide\u202f19** of the material.",
+      "retrieved_locations": [
+        19,
+        11,
+        12,
+        2,
+        17
+      ],
+      "expected_locations": [
+        19
+      ],
+      "citation_location_hit": false,
+      "metrics": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.8040944153407772,
+        "context_precision": 0.7499999999625,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "off03",
+      "kind": "off_material",
+      "question": "Write Python code that trains a random forest on the Iris dataset.",
+      "answer": "The supplied material does not cover random forests or the Iris dataset, so I\u2019ll provide a concise example based on standard Python libraries.\n\n```python\n# Import necessary libraries\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import accuracy_score\n\n# Load the Iris dataset\niris = load_iris()\nX, y = iris.data, iris.target\n\n# Split into training and test sets\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42, stratify=y\n)\n\n# Create and train a Random Forest classifier\nrf = RandomForestClassifier(\n    n_estimators=100,          # number of trees\n    max_depth=None,            # grow trees until all leaves are pure\n    random_state=42\n)\nrf.fit(X_train, y_train)\n\n# Predict on the test set\ny_pred = rf.predict(X_test)\n\n# Evaluate accuracy\naccuracy = accuracy_score(y_test, y_pred)\nprint(f\"Test accuracy: {accuracy:.2f}\")\n```\n\n**Explanation of the steps**\n\n- **Data loading** \u2013 `load_iris()` returns the feature matrix `X` and target vector `y`.\n- **Train/test split** \u2013 `train_test_split` reserves 20\u202f% of the data for evaluation, keeping class proportions with `stratify=y`.\n- **Model creation** \u2013 `RandomForestClassifier` builds an ensemble of decision trees; `n_estimators` sets how many trees to grow.\n- **Training** \u2013 `fit` learns the model from the training data.\n- **Prediction & evaluation** \u2013 `predict` generates class labels for the test set, and `accuracy_score` measures how many predictions match the true labels.\n\nThis code will train a random forest on the Iris dataset and print the test accuracy.",
+      "retrieved_locations": [
+        20,
+        15,
+        1,
+        13,
+        4
+      ],
+      "expected_locations": [],
+      "citation_location_hit": false,
+      "unsupported_query_flagged": true
+    }
+  ]
+}

@@ -1,0 +1,362 @@
+{
+  "material_id": "material_58e6a8a98719",
+  "k": 5,
+  "evaluated_answerable_cases": 22,
+  "mean_source_precision_at_k": 0.182,
+  "mean_source_recall_at_k": 0.909,
+  "note": "Source-location retrieval proxy based on matching retrieved slide metadata to known relevant slides; not a full RAGAS score.",
+  "cases": [
+    {
+      "id": "ml01",
+      "kind": "answerable",
+      "expected_slides": [
+        3
+      ],
+      "retrieved_slides": [
+        3,
+        1,
+        2,
+        4,
+        6
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml02",
+      "kind": "answerable",
+      "expected_slides": [
+        4
+      ],
+      "retrieved_slides": [
+        4,
+        3,
+        1,
+        2,
+        20
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml03",
+      "kind": "answerable",
+      "expected_slides": [
+        6
+      ],
+      "retrieved_slides": [
+        2,
+        3,
+        1,
+        6,
+        20
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml04",
+      "kind": "answerable",
+      "expected_slides": [
+        7
+      ],
+      "retrieved_slides": [
+        4,
+        7,
+        3,
+        1,
+        6
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml05",
+      "kind": "answerable",
+      "expected_slides": [
+        8
+      ],
+      "retrieved_slides": [
+        6,
+        1,
+        20,
+        2,
+        16
+      ],
+      "source_precision_at_k": 0.0,
+      "source_recall_at_k": 0.0
+    },
+    {
+      "id": "ml06",
+      "kind": "answerable",
+      "expected_slides": [
+        9
+      ],
+      "retrieved_slides": [
+        9,
+        6,
+        4,
+        1,
+        3
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml07",
+      "kind": "answerable",
+      "expected_slides": [
+        10
+      ],
+      "retrieved_slides": [
+        10,
+        1,
+        2,
+        20,
+        15
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml08",
+      "kind": "answerable",
+      "expected_slides": [
+        11
+      ],
+      "retrieved_slides": [
+        11,
+        6,
+        7,
+        5,
+        1
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml09",
+      "kind": "answerable",
+      "expected_slides": [
+        12
+      ],
+      "retrieved_slides": [
+        12,
+        2,
+        1,
+        6,
+        11
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml10",
+      "kind": "answerable",
+      "expected_slides": [
+        14
+      ],
+      "retrieved_slides": [
+        17,
+        16,
+        1,
+        6,
+        2
+      ],
+      "source_precision_at_k": 0.0,
+      "source_recall_at_k": 0.0
+    },
+    {
+      "id": "ml11",
+      "kind": "answerable",
+      "expected_slides": [
+        15
+      ],
+      "retrieved_slides": [
+        15,
+        1,
+        12,
+        17,
+        2
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml12",
+      "kind": "answerable",
+      "expected_slides": [
+        16
+      ],
+      "retrieved_slides": [
+        16,
+        17,
+        3,
+        6,
+        2
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml13",
+      "kind": "answerable",
+      "expected_slides": [
+        18
+      ],
+      "retrieved_slides": [
+        18,
+        7,
+        17,
+        5,
+        14
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml14",
+      "kind": "answerable",
+      "expected_slides": [
+        19
+      ],
+      "retrieved_slides": [
+        19,
+        18,
+        12,
+        1,
+        17
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "ml15",
+      "kind": "answerable",
+      "expected_slides": [
+        20
+      ],
+      "retrieved_slides": [
+        15,
+        11,
+        20,
+        13,
+        8
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "cite01",
+      "kind": "citation_check",
+      "expected_slides": [
+        3
+      ],
+      "retrieved_slides": [
+        1,
+        3,
+        2,
+        6,
+        4
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "cite02",
+      "kind": "citation_check",
+      "expected_slides": [
+        9
+      ],
+      "retrieved_slides": [
+        9,
+        6,
+        17,
+        2,
+        13
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "cite03",
+      "kind": "citation_check",
+      "expected_slides": [
+        12
+      ],
+      "retrieved_slides": [
+        12,
+        14,
+        19,
+        15,
+        18
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "cite04",
+      "kind": "citation_check",
+      "expected_slides": [
+        15
+      ],
+      "retrieved_slides": [
+        15,
+        2,
+        1,
+        6,
+        16
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "cite05",
+      "kind": "citation_check",
+      "expected_slides": [
+        19
+      ],
+      "retrieved_slides": [
+        19,
+        11,
+        12,
+        2,
+        17
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "chart14",
+      "kind": "answerable",
+      "expected_slides": [
+        14
+      ],
+      "retrieved_slides": [
+        14,
+        7,
+        12,
+        11,
+        5
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    },
+    {
+      "id": "chart18",
+      "kind": "answerable",
+      "expected_slides": [
+        18
+      ],
+      "retrieved_slides": [
+        18,
+        12,
+        17,
+        14,
+        7
+      ],
+      "source_precision_at_k": 0.2,
+      "source_recall_at_k": 1.0
+    }
+  ]
+}

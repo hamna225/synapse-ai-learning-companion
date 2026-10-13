@@ -1,0 +1,33 @@
+{
+  "course_material": "Basics_of_Machine_Learning.pptx",
+  "reference_material_id": "material_3d86acbfc9e4",
+  "cases": [
+    {"id":"ml01","kind":"answerable","question":"What is machine learning?","expected_facts":["Learns patterns from data","Improves with experience rather than hand-written rules"],"expected_slides":[3]},
+    {"id":"ml02","kind":"answerable","question":"How does traditional programming differ from machine learning?","expected_facts":["Traditional programming uses data and hand-written rules","Machine learning uses data and answers/examples to learn rules"],"expected_slides":[4]},
+    {"id":"ml03","kind":"answerable","question":"Name the three main types of machine learning and briefly describe each.","expected_facts":["Supervised learning uses labeled examples","Unsupervised learning finds structure in unlabeled data","Reinforcement learning learns through rewards or penalties"],"expected_slides":[6]},
+    {"id":"ml04","kind":"answerable","question":"What is the difference between classification and regression?","expected_facts":["Classification predicts a category","Regression predicts a number"],"expected_slides":[7]},
+    {"id":"ml05","kind":"answerable","question":"Give two examples of unsupervised learning tasks from the slides.","expected_facts":["Clustering","Dimensionality reduction","Anomaly detection"],"expected_slides":[8]},
+    {"id":"ml06","kind":"answerable","question":"In reinforcement learning, what are a policy and a reward?","expected_facts":["Policy is the strategy for choosing actions","Reward is feedback indicating how good an action was"],"expected_slides":[9]},
+    {"id":"ml07","kind":"answerable","question":"List the main steps in the machine-learning workflow.","expected_facts":["Collect data","Prepare data","Choose a model","Train","Evaluate","Deploy"],"expected_slides":[10]},
+    {"id":"ml08","kind":"answerable","question":"What is a feature, and what is a label?","expected_facts":["Features are inputs","Label is the target"],"expected_slides":[11]},
+    {"id":"ml09","kind":"answerable","question":"What are the training, validation, and test sets used for?","expected_facts":["Training learns patterns","Validation compares models and tunes settings","Test is a final unbiased check"],"expected_slides":[12]},
+    {"id":"ml10","kind":"answerable","question":"What does linear regression learn during training?","expected_facts":["Weight/slope and bias/intercept","Parameters are chosen to minimize error"],"expected_slides":[14]},
+    {"id":"ml11","kind":"answerable","question":"How does a decision tree split data, and what is one risk of a deep tree?","expected_facts":["Uses a chain of yes/no questions","Deep trees may memorize training data"],"expected_slides":[15]},
+    {"id":"ml12","kind":"answerable","question":"What happens to weights when a neural network is trained?","expected_facts":["Training tunes weights to reduce errors"],"expected_slides":[16]},
+    {"id":"ml13","kind":"answerable","question":"What is overfitting, and name one fix shown in the slides.","expected_facts":["Overfitting memorizes noise and performs poorly on new data","Possible fixes include more data, regularization, or a simpler model"],"expected_slides":[18]},
+    {"id":"ml14","kind":"answerable","question":"How do precision and recall differ?","expected_facts":["Precision concerns how many predicted positives are real","Recall concerns how many real positives were found"],"expected_slides":[19]},
+    {"id":"ml15","kind":"answerable","question":"What are two recommendations from the key takeaways?","expected_facts":["Good data and honest evaluation matter","Start simple and check for overfitting","Iterate"],"expected_slides":[20]},
+    {"id":"cite01","kind":"citation_check","question":"Which slide defines machine learning as learning patterns from data?","expected_facts":["The definition says computers learn patterns from data and improve with experience"],"expected_slides":[3]},
+    {"id":"cite02","kind":"citation_check","question":"Which slide explains that reinforcement learning aims to maximize total reward over time?","expected_facts":["The goal is to maximize total reward over time"],"expected_slides":[9]},
+    {"id":"cite03","kind":"citation_check","question":"Which slide says the test set is a final unbiased check?","expected_facts":["The test set is used for a final unbiased check"],"expected_slides":[12]},
+    {"id":"cite04","kind":"citation_check","question":"Which slide explains that deeper decision trees can memorize training data?","expected_facts":["Deep trees can memorize training data"],"expected_slides":[15]},
+    {"id":"cite05","kind":"citation_check","question":"Which slide defines accuracy, precision, recall, and F1 score?","expected_facts":["The slide defines the four listed evaluation metrics"],"expected_slides":[19]},
+    {"id":"chart14","kind":"answerable","question":"What does the chart on slide 14 show about the house data and fitted line?","expected_facts":["Observed house data points are plotted against house size","A best-fit line from linear regression approximates the increasing relationship"],"expected_slides":[14]},
+    {"id":"chart18","kind":"answerable","question":"What does the chart on slide 18 show about training and validation error as model complexity increases?","expected_facts":["Training error falls as complexity increases","Validation error initially falls then rises","The divergence at higher complexity illustrates overfitting"],"expected_slides":[18]},
+    {"id":"off01","kind":"off_material","question":"What was the global machine-learning job market size in 2026?","expected_facts":[],"expected_slides":[]},
+    {"id":"off02","kind":"off_material","question":"What is the time complexity of merge sort, and why?","expected_facts":[],"expected_slides":[]},
+    {"id":"off03","kind":"off_material","question":"Write Python code that trains a random forest on the Iris dataset.","expected_facts":[],"expected_slides":[]},
+    {"id":"off04","kind":"off_material","question":"What are the current prices of NVIDIA and AMD shares?","expected_facts":[],"expected_slides":[]},
+    {"id":"off05","kind":"off_material","question":"Explain the transformer self-attention equation in detail.","expected_facts":[],"expected_slides":[]}
+  ]
+}

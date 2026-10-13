@@ -1,0 +1,33 @@
+{
+  "framework": "RAGAS",
+  "ragas_version": "0.4.3",
+  "run_at": "2026-10-12T15:09:06.844714+00:00",
+  "material_id": "material_58e6a8a98719",
+  "evaluator_model": "openai/gpt-oss-120b",
+  "scored_answerable_cases": 0,
+  "metrics_mean": {
+    "faithfulness": null,
+    "answer_relevancy": null,
+    "context_precision": null,
+    "context_recall": null
+  },
+  "citation_location_hit_rate": null,
+  "off_material_flag_rate": 1.0,
+  "off_material_check": "Deterministic phrase check for an explicit outside-material or not-covered flag; not a RAGAS metric.",
+  "cases": [
+    {
+      "id": "off05",
+      "kind": "off_material",
+      "question": "Explain the transformer self-attention equation in detail.",
+      "answer": "**General explanation (outside the uploaded material):**  \nThe self\u2011attention mechanism in a transformer computes, for each token in a sequence, a weighted sum of all tokens (including itself). The weights are derived from the similarity between a *query* vector for the target token and *key* vectors for all tokens. The process can be broken down into the following steps:\n\n1. **Linear projections**  \n   - Each input embedding \\(x_i\\) is projected into three vectors:  \n     \\[\n     q_i = W_Q x_i,\\quad k_i = W_K x_i,\\quad v_i = W_V x_i\n     \\]  \n   - \\(W_Q, W_K, W_V\\) are learned weight matrices.\n\n2. **Similarity scores**  \n   - For a target token \\(i\\), compute the dot product between its query \\(q_i\\) and every key \\(k_j\\):  \n     \\[\n     s_{ij} = q_i^\\top k_j\n     \\]  \n   - These scores indicate how much token \\(i\\) should attend to token \\(j\\).\n\n3. **Scaling**  \n   - To keep gradients stable, divide the scores by \\(\\sqrt{d_k}\\), where \\(d_k\\) is the dimensionality of the key vectors:  \n     \\[\n     \\tilde{s}_{ij} = \\frac{s_{ij}}{\\sqrt{d_k}}\n     \\]\n\n4. **Softmax normalization**  \n   - Convert the scaled scores into a probability distribution over all tokens:  \n     \\[\n     a_{ij} = \\frac{\\exp(\\tilde{s}_{ij})}{\\sum_{l}\\exp(\\tilde{s}_{il})}\n     \\]  \n   - \\(a_{ij}\\) is the attention weight from token \\(i\\) to token \\(j\\).\n\n5. **Weighted sum of values**  \n   - The output for token \\(i\\) is the sum of all value vectors weighted by the attention weights:  \n     \\[\n     z_i = \\sum_{j} a_{ij} v_j\n     \\]\n\n6. **Multi\u2011head extension**  \n   - The above steps are performed in parallel for several *heads*, each with its own set of projection matrices.  \n   - The resulting head outputs are concatenated and projected once more to produce the final self\u2011attention output.\n\nIn summary, the transformer self\u2011attention equation combines linear projections, scaled dot\u2011product similarity, softmax weighting, and a weighted sum of value vectors to allow each token to dynamically focus on relevant parts of the sequence.",
+      "retrieved_locations": [
+        6,
+        16,
+        1
+      ],
+      "expected_locations": [],
+      "citation_location_hit": false,
+      "unsupported_query_flagged": true
+    }
+  ]
+}

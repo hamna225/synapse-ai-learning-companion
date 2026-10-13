@@ -1,0 +1,61 @@
+{
+  "framework": "RAGAS",
+  "ragas_version": "0.4.3",
+  "run_at": "2026-10-12T14:55:32.634548+00:00",
+  "material_id": "material_58e6a8a98719",
+  "evaluator_model": "openai/gpt-oss-120b",
+  "scored_answerable_cases": 2,
+  "metrics_mean": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.8672,
+    "context_precision": 1.0,
+    "context_recall": 1.0
+  },
+  "citation_location_hit_rate": 1.0,
+  "off_material_flag_rate": null,
+  "off_material_check": "Deterministic phrase check for an explicit outside-material or not-covered flag; not a RAGAS metric.",
+  "cases": [
+    {
+      "id": "ml13",
+      "kind": "answerable",
+      "question": "What is overfitting, and name one fix shown in the slides.",
+      "answer": "Overfitting occurs when a model learns the noise in the training data instead of the underlying pattern. As a result, it performs very well on the training set but poorly on new, unseen data.  \nOne fix shown in the slides is **regularization** (other options include collecting more data or simplifying the model) [1].",
+      "retrieved_locations": [
+        18,
+        7,
+        17
+      ],
+      "expected_locations": [
+        18
+      ],
+      "citation_location_hit": true,
+      "metrics": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.7831538444117484,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "cite03",
+      "kind": "citation_check",
+      "question": "Which slide says the test set is a final unbiased check?",
+      "answer": "The slide that states the test set is a final unbiased check is the one titled **\u201cTraining, Validation, Test\u201d**\u30101\u3011.",
+      "retrieved_locations": [
+        12,
+        14,
+        19
+      ],
+      "expected_locations": [
+        12
+      ],
+      "citation_location_hit": true,
+      "metrics": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.951257717949539,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    }
+  ]
+}

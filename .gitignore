@@ -1,0 +1,31 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+
+# Python environments, bytecode, and test caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest-tmp/
+
+# JavaScript dependencies and generated builds
+node_modules/
+**/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+# Local vector databases and uploaded course files
+chroma_db/
+**/chroma_db/
+uploaded_materials/
+**/uploaded_materials/
+data/
+**/converted/
+
+# Local learner state and logs
+backend/student_analytics/learner_state.json
+backend/analytics_data.json
+*.log

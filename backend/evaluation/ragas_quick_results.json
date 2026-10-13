@@ -1,0 +1,54 @@
+{
+  "framework": "RAGAS",
+  "ragas_version": "0.4.3",
+  "run_at": "2026-10-12T14:44:37.268619+00:00",
+  "material_id": "material_58e6a8a98719",
+  "evaluator_model": "openai/gpt-oss-120b",
+  "scored_answerable_cases": 1,
+  "metrics_mean": {
+    "faithfulness": 0.7778,
+    "answer_relevancy": 1.0,
+    "context_precision": 1.0,
+    "context_recall": 1.0
+  },
+  "citation_location_hit_rate": 1.0,
+  "off_material_flag_rate": 1.0,
+  "off_material_check": "Deterministic phrase check for an explicit outside-material or not-covered flag; not a RAGAS metric.",
+  "cases": [
+    {
+      "id": "ml01",
+      "kind": "answerable",
+      "question": "What is machine learning?",
+      "answer": "Machine learning is a branch of artificial intelligence that enables computers to learn patterns from data and improve their performance on a task through experience, rather than following pre\u2011written rules. In other words, a program learns from experience (E) on a task (T) if its performance (P) on that task improves with more experience [1]. This learning process is how machines can adapt and make predictions or decisions based on data.",
+      "retrieved_locations": [
+        3,
+        1,
+        2
+      ],
+      "expected_locations": [
+        3
+      ],
+      "citation_location_hit": true,
+      "metrics": {
+        "faithfulness": 0.7777777777777778,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.9999999999666667,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "off01",
+      "kind": "off_material",
+      "question": "What was the global machine-learning job market size in 2026?",
+      "answer": "The global machine\u2011learning job market was estimated to be worth **about\u202f$200\u202fbillion in 2026**.  \n\n**General explanation (outside the uploaded material):**  \nIndustry forecasts from 2023\u20132024 projected that the demand for ML professionals would grow rapidly, with the global market for machine\u2011learning roles reaching roughly $200\u202fbillion by 2026. This estimate reflects the expanding use of ML across sectors such as finance, healthcare, retail, and manufacturing, and the increasing need for data scientists, ML engineers, and related talent.",
+      "retrieved_locations": [
+        2,
+        3,
+        4
+      ],
+      "expected_locations": [],
+      "citation_location_hit": false,
+      "unsupported_query_flagged": true
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "framework": "RAGAS",
+  "ragas_version": "0.4.3",
+  "run_at": "2026-10-12T15:02:03.018671+00:00",
+  "material_id": "material_58e6a8a98719",
+  "evaluator_model": "openai/gpt-oss-120b",
+  "scored_answerable_cases": 1,
+  "metrics_mean": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.583,
+    "context_precision": 1.0,
+    "context_recall": 1.0
+  },
+  "citation_location_hit_rate": 1.0,
+  "off_material_flag_rate": 1.0,
+  "off_material_check": "Deterministic phrase check for an explicit outside-material or not-covered flag; not a RAGAS metric.",
+  "cases": [
+    {
+      "id": "chart18",
+      "kind": "answerable",
+      "question": "What does the chart on slide 18 show about training and validation error as model complexity increases?",
+      "answer": "The chart shows how the errors change as the model becomes more complex (from complexity\u202f1 to 10):\n\n- **Training error** steadily falls from 9.0 at complexity\u202f1 to 0.6 at complexity\u202f10, indicating that a more complex model fits the training data better. [1]\n- **Validation error** first decreases, reaching a minimum around complexity\u202f5 (4.4), then rises sharply, reaching 8.2 at complexity\u202f10. This pattern signals that after a certain point the model starts to overfit the training data and performs worse on unseen data. [1]",
+      "retrieved_locations": [
+        18
+      ],
+      "expected_locations": [
+        18
+      ],
+      "citation_location_hit": true,
+      "metrics": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.5830082595362807,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "off02",
+      "kind": "off_material",
+      "question": "What is the time complexity of merge sort, and why?",
+      "answer": "**General explanation (outside the uploaded material):**  \nMerge sort has a time complexity of **O(n\u202flog\u202fn)**.  \n\n- **Divide step:** The algorithm recursively splits the input array into two halves until sub\u2011arrays of size one are reached. This creates a recursion tree with depth log\u2082\u202fn.  \n- **Merge step:** At each level of the recursion tree, all elements are merged back together. Merging two sorted sub\u2011arrays of total size k takes \u0398(k) time. Across one level of the tree, the total work is \u0398(n).  \n- **Total work:** With log\u2082\u202fn levels and \u0398(n) work per level, the overall running time is \u0398(n\u202flog\u202fn).  \n\nThus, merge sort consistently runs in O(n\u202flog\u202fn) time regardless of the input distribution.",
+      "retrieved_locations": [
+        13,
+        8,
+        10
+      ],
+      "expected_locations": [],
+      "citation_location_hit": false,
+      "unsupported_query_flagged": true
+    }
+  ]
+}
