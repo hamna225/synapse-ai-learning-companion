@@ -1,14 +1,18 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from langchain_core.documents import Document
+from langchain_chroma import Chroma
 
 from uuid import uuid4
 
 import os
 import json
 import re
+import secrets
+import sqlite3
+import time
 from difflib import SequenceMatcher
 try:
     import pythoncom
@@ -31,6 +35,8 @@ from agents.tutor_agent import (
     get_tutor,
     get_llm,
 )
+from agents.groq_provider import get_groq_text_model
+from rag.retriever import get_retriever
 
 from assessment.generator import (
     generate_mcq,
@@ -52,6 +58,7 @@ from student_analytics.learner_profile import (
     load_profile,
     record_answer,
 )
+from resume_analyzer import router as resume_router
 
 
 # =========================================================
@@ -188,15 +195,27 @@ def generate_unique_mcq(
 # =========================================================
 
 app = FastAPI(
-    title="AI Adaptive Learning Companion",
+    title="Synapse AI Resume Analyzer",
     version="1.0.0",
 )
+app.include_router(resume_router)
+
+
+@app.middleware("http")
+async def require_space_api_token(request: Request, call_next):
+    """Protect the public Hugging Face API when its shared secret is configured."""
+    api_token = os.getenv("SYNAPSE_API_TOKEN", "")
+    if api_token and request.url.path != "/":
+        authorization = request.headers.get("authorization", "")
+        if not secrets.compare_digest(authorization, f"Bearer {api_token}"):
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    return await call_next(request)
 
 @app.get("/")
 def health_check():
     return {
         "status": "online",
-        "message": "AI Adaptive Learning Companion backend is running"
+        "message": "Synapse AI Resume Analyzer backend is running"
     }
 
 # =========================================================
@@ -1106,6 +1125,12 @@ def create_session(
         f"session_{uuid4().hex[:12]}"
     )
 
+    with _upload_db_connection() as connection:
+        connection.execute(
+            "INSERT INTO learning_sessions (session_id, student_id) VALUES (?, ?)",
+            (session_id, request.student_id),
+        )
+
     return {
 
         "message":
@@ -1119,15 +1144,150 @@ def create_session(
     }
 
 
+def _upload_db_connection():
+    db_path = os.getenv(
+        "SYNAPSE_UPLOAD_DB_PATH",
+        "data/upload_limits.sqlite3",
+    )
+    db_directory = os.path.dirname(db_path)
+    if db_directory:
+        os.makedirs(db_directory, exist_ok=True)
+    connection = sqlite3.connect(db_path, timeout=30)
+    connection.execute("PRAGMA busy_timeout = 30000")
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS learning_sessions "
+        "(session_id TEXT PRIMARY KEY, student_id TEXT NOT NULL)"
+    )
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS student_pdf_uploads "
+        "(material_id TEXT PRIMARY KEY, student_id TEXT NOT NULL, "
+        "status TEXT NOT NULL, created_at REAL NOT NULL)"
+    )
+    return connection
+
+
+def _reserve_pdf_upload(session_id, material_id):
+    try:
+        limit = max(1, int(os.getenv("MAX_PDF_UPLOADS_PER_STUDENT", "5")))
+    except ValueError:
+        limit = 5
+
+    with _upload_db_connection() as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        session = connection.execute(
+            "SELECT student_id FROM learning_sessions WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        if not session:
+            raise HTTPException(
+                status_code=400,
+                detail="Learning session expired. Start a new learning session and try again.",
+            )
+
+        student_id = session[0]
+        connection.execute(
+            "DELETE FROM student_pdf_uploads "
+            "WHERE student_id = ? AND status = 'pending' AND created_at < ?",
+            (student_id, time.time() - 3600),
+        )
+        count = connection.execute(
+            "SELECT COUNT(*) FROM student_pdf_uploads WHERE student_id = ?",
+            (student_id,),
+        ).fetchone()[0]
+        if count >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail=f"PDF upload limit reached ({limit} per browser profile).",
+            )
+        connection.execute(
+            "INSERT INTO student_pdf_uploads "
+            "(material_id, student_id, status, created_at) VALUES (?, ?, 'pending', ?)",
+            (material_id, student_id, time.time()),
+        )
+
+
+def _finish_pdf_upload(material_id):
+    with _upload_db_connection() as connection:
+        connection.execute(
+            "UPDATE student_pdf_uploads SET status = 'complete' WHERE material_id = ?",
+            (material_id,),
+        )
+
+
+def _release_pdf_upload(material_id):
+    with _upload_db_connection() as connection:
+        connection.execute(
+            "DELETE FROM student_pdf_uploads WHERE material_id = ? AND status = 'pending'",
+            (material_id,),
+        )
+
+
 # =========================================================
 # UPLOAD PDF / PPT / PPTX
 # =========================================================
+
+def _index_visual_enrichment(
+    processing_path,
+    is_pdf,
+    material_id,
+    session_id,
+    material_name,
+    file_extension,
+    converted_from_ppt,
+):
+    """Add figure descriptions after the text-only material is already usable."""
+    try:
+        documents = (
+            load_pdf(processing_path)
+            if is_pdf
+            else load_ppt(processing_path)
+        )
+        visual_documents = []
+        marker = "Figure or diagram description:"
+        for document in documents:
+            if not document.metadata.get("visual_content_extracted"):
+                continue
+            _, found, description = document.page_content.partition(marker)
+            if not found or not description.strip():
+                continue
+            metadata = dict(document.metadata)
+            metadata.update(
+                {
+                    "session_id": session_id,
+                    "material_id": material_id,
+                    "material_name": material_name,
+                    "file_type": file_extension,
+                    "converted_from_ppt": converted_from_ppt,
+                }
+            )
+            visual_documents.append(
+                Document(
+                    page_content=f"{marker} {description.strip()}",
+                    metadata=metadata,
+                )
+            )
+
+        visual_chunks = create_chunks(visual_documents)
+        if visual_chunks:
+            store = Chroma(
+                collection_name=material_id,
+                embedding_function=get_embeddings(),
+                persist_directory=os.getenv("SYNAPSE_CHROMA_DB_PATH", "chroma_db"),
+            )
+            store.add_documents(visual_chunks)
+            print(
+                f"Added {len(visual_chunks)} figure-description chunks "
+                f"for {material_name}."
+            )
+    except Exception as error:
+        print(f"Background figure analysis failed for {material_name}: {error}")
 
 @app.post(
     "/sessions/{session_id}/materials"
 )
 async def upload_material(
     session_id: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
 ):
 
@@ -1159,9 +1319,27 @@ async def upload_material(
             ),
         )
 
-    upload_dir = (
-        "uploaded_materials"
-    )
+    try:
+        max_upload_bytes = max(
+            1,
+            int(os.getenv("MAX_UPLOAD_SIZE_MB", "10")),
+        ) * 1024 * 1024
+    except ValueError:
+        max_upload_bytes = 10 * 1024 * 1024
+
+    # Read at most one byte beyond the limit so large uploads do not get
+    # copied fully into application memory before they are rejected.
+    file_content = await file.read(max_upload_bytes + 1)
+    if len(file_content) > max_upload_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                "This file is too large. The upload limit is "
+                f"{max_upload_bytes // (1024 * 1024)} MB."
+            ),
+        )
+
+    upload_dir = os.getenv("SYNAPSE_MATERIALS_PATH", "uploaded_materials")
 
     os.makedirs(
         upload_dir,
@@ -1172,15 +1350,15 @@ async def upload_material(
         f"material_{uuid4().hex[:12]}"
     )
 
+    if file_extension == ".pdf":
+        _reserve_pdf_upload(session_id, material_id)
+
     file_path = os.path.join(
         upload_dir,
         f"{material_id}_{original_filename}",
     )
 
     try:
-
-        file_content = await file.read()
-
         with open(
             file_path,
             "wb",
@@ -1191,6 +1369,8 @@ async def upload_material(
             )
 
     except Exception as e:
+
+        _release_pdf_upload(material_id)
 
         raise HTTPException(
             status_code=500,
@@ -1207,11 +1387,14 @@ async def upload_material(
 
         try:
 
-            documents = load_pdf(
-                processing_path
-            )
+            documents = load_pdf(processing_path, analyze_visuals=False)
 
         except Exception as e:
+
+            _release_pdf_upload(material_id)
+
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
             raise HTTPException(
                 status_code=400,
@@ -1224,9 +1407,7 @@ async def upload_material(
 
         try:
 
-            documents = load_ppt(
-                processing_path
-            )
+            documents = load_ppt(processing_path, analyze_visuals=False)
 
         except Exception as e:
 
@@ -1265,9 +1446,7 @@ async def upload_material(
 
             converted_from_ppt = True
 
-            documents = load_ppt(
-                processing_path
-            )
+            documents = load_ppt(processing_path, analyze_visuals=False)
 
         except Exception as e:
 
@@ -1291,6 +1470,8 @@ async def upload_material(
         documents = []
 
     if not documents:
+
+        _release_pdf_upload(material_id)
 
         raise HTTPException(
             status_code=400,
@@ -1329,6 +1510,8 @@ async def upload_material(
 
     except Exception as e:
 
+        _release_pdf_upload(material_id)
+
         raise HTTPException(
             status_code=400,
             detail=(
@@ -1337,6 +1520,8 @@ async def upload_material(
         )
 
     if not chunks:
+
+        _release_pdf_upload(material_id)
 
         raise HTTPException(
             status_code=400,
@@ -1359,6 +1544,8 @@ async def upload_material(
 
     except Exception as e:
 
+        _release_pdf_upload(material_id)
+
         print(
             "Vector store creation error:",
             str(e),
@@ -1369,6 +1556,25 @@ async def upload_material(
             detail=(
                 f"Failed to create vector store: {str(e)}"
             ),
+        )
+
+    if file_extension == ".pdf":
+        _finish_pdf_upload(material_id)
+
+    visual_analysis_pending = any(
+        document.metadata.get("visual_pending")
+        for document in documents
+    )
+    if visual_analysis_pending:
+        background_tasks.add_task(
+            _index_visual_enrichment,
+            processing_path,
+            file_extension == ".pdf",
+            material_id,
+            session_id,
+            original_filename,
+            file_extension,
+            converted_from_ppt,
         )
 
     return {
@@ -1387,6 +1593,9 @@ async def upload_material(
 
         "file_type":
             file_extension,
+
+        "visual_analysis_pending":
+            visual_analysis_pending,
 
         "converted_from_ppt":
             converted_from_ppt,
@@ -1574,7 +1783,7 @@ def get_material_source(material_id: str):
     if not re.fullmatch(r"material_[a-fA-F0-9]+", material_id):
         raise HTTPException(status_code=400, detail="Invalid material ID.")
 
-    upload_dir = os.path.abspath("uploaded_materials")
+    upload_dir = os.path.abspath(os.getenv("SYNAPSE_MATERIALS_PATH", "uploaded_materials"))
     try:
         filename = next(
             name for name in os.listdir(upload_dir)
@@ -1723,9 +1932,10 @@ Now answer the student.
 
         print("=" * 80)
 
-        llm, retriever = get_tutor(
-            request.material_id
-        )
+        # Document Q&A uses the configured Groq provider, matching topic
+        # discovery and resume analysis; it does not require XAI_API_KEY.
+        llm = get_groq_text_model(temperature=0, max_tokens=3500)
+        retriever = get_retriever(request.material_id)
 
         requested_slide = re.search(
             r"\bslide\s*#?\s*(\d+)\b",
@@ -1983,293 +2193,83 @@ def get_topics(
 
     try:
 
-        llm, retriever = get_tutor(
-            request.material_id
+        # Topic extraction uses Groq, so document maps work with the same key
+        # as resume analysis even when the learning tutor's xAI key is absent.
+        llm = get_groq_text_model(temperature=0, max_tokens=2500, json_mode=True)
+        retriever = get_retriever(request.material_id)
+
+        stored = retriever.vectorstore.get(include=["documents", "metadatas"])
+        documents = stored.get("documents") or []
+        metadatas = stored.get("metadatas") or []
+        segments = []
+        seen_text = set()
+        for index, text in enumerate(documents):
+            text = str(text or "").strip()
+            if not text or text in seen_text:
+                continue
+            seen_text.add(text)
+            metadata = metadatas[index] if index < len(metadatas) else {}
+            if request.material_id.startswith("youtube_"):
+                location = metadata.get("timestamp", "")
+                order = float(metadata.get("start_time", 0) or 0)
+            elif metadata.get("slide"):
+                location = f"Slide {metadata['slide']}"
+                order = float(metadata.get("slide", 0) or 0)
+            else:
+                location = f"Page {metadata['page']}" if metadata.get("page") else ""
+                order = float(metadata.get("page", index) or index)
+            labeled = f"[{location}] {text}" if location else text
+            segments.append((order, labeled))
+
+        segments.sort(key=lambda item: item[0])
+        if not segments:
+            raise ValueError("No readable indexed text was found for this document.")
+
+        # Scan the complete indexed document in bounded batches. Semantic top-k
+        # retrieval alone misses sections that do not resemble search prompts.
+        batches = []
+        batch_parts = []
+        batch_length = 0
+        batch_limit = 28000
+        for _, segment in segments:
+            if batch_parts and batch_length + len(segment) > batch_limit:
+                batches.append("\n\n".join(batch_parts))
+                batch_parts = []
+                batch_length = 0
+            batch_parts.append(segment[:batch_limit])
+            batch_length += min(len(segment), batch_limit)
+        if batch_parts:
+            batches.append("\n\n".join(batch_parts))
+
+        candidate_topics = []
+        for batch_number, context in enumerate(batches, start=1):
+            prompt = f'''Find every distinct meaningful topic and subtopic explicitly covered in this portion of the uploaded document. Include technical concepts, sections, skills, processes, and project themes where relevant. Do not invent topics. Return JSON only as {{"topics":[{{"topic":"concise heading","subtopics":["specific included concepts"]}}]}}. This is portion {batch_number} of {len(batches)}; report all topics in this portion and do not limit the list to a fixed number.\n\nDOCUMENT TEXT:\n{context}'''
+            response = llm.invoke(prompt)
+            parsed = parse_llm_json(response.content)
+            batch_topics = parsed.get("topics", []) if isinstance(parsed, dict) else parsed
+            if isinstance(batch_topics, list):
+                candidate_topics.extend(batch_topics)
+
+        candidates = filter_meaningful_topics(candidate_topics)
+        if not candidates:
+            raise ValueError("No meaningful topics were identified in the indexed document text.")
+
+        # Merge repeated headings across batches while retaining all distinct topics.
+        merge_prompt = f'''Merge duplicate or closely related topic headings from this exhaustive batch scan. Preserve every distinct topic and useful subtopic; do not cap the number and do not add concepts. Return JSON only as {{"topics":[{{"topic":"concise heading","subtopics":["specific included concepts"]}}]}}.\n\nTOPIC CANDIDATES:\n{json.dumps(candidates, ensure_ascii=False)}'''
+        merged = parse_llm_json(llm.invoke(merge_prompt).content)
+        topics = merged.get("topics", []) if isinstance(merged, dict) else merged
+        if not isinstance(topics, list):
+            raise ValueError("Topic consolidation did not return a valid list.")
+        merged_names = {
+            str(item.get("topic", "")).strip().casefold()
+            for item in topics
+            if isinstance(item, dict)
+        }
+        # Keep any candidate the consolidation pass accidentally omitted.
+        topics.extend(
+            item for item in candidates
+            if item["topic"].casefold() not in merged_names
         )
-
-        search_queries = [
-
-            "all topics covered in this lecture",
-
-            "main topics and chapter headings",
-
-            "main concepts discussed",
-
-            "important concepts and definitions",
-
-            "key terms and terminology",
-
-            "major subjects discussed",
-
-            "theory definitions examples",
-
-            "introduction conclusion summary",
-        ]
-
-        all_docs = []
-
-        if request.material_id.startswith("youtube_"):
-            # Topic discovery needs the transcript in sequence, not a handful
-            # of semantically similar but potentially scattered chunks.
-            stored = retriever.vectorstore.get(
-                include=["documents", "metadatas"]
-            )
-            segments = zip(
-                stored.get("documents") or [],
-                stored.get("metadatas") or [],
-            )
-            for text, metadata in sorted(
-                segments,
-                key=lambda segment: float(segment[1].get("start_time", 0)),
-            ):
-                timestamp = metadata.get("timestamp", "")
-                all_docs.append(Document(
-                    page_content=f"[{timestamp}] {text}" if timestamp else text,
-                    metadata=metadata,
-                ))
-        else:
-            for query in search_queries:
-                try:
-                    docs = retriever.invoke(query)
-                    if docs:
-                        all_docs.extend(docs)
-                except Exception as search_error:
-                    print(f"Search failed for '{query}':", search_error)
-
-        unique_text = []
-
-        seen = set()
-
-        for doc in all_docs:
-
-            if not hasattr(
-                doc,
-                "page_content",
-            ):
-
-                continue
-
-            text = (
-                doc.page_content
-                .strip()
-            )
-
-            if not text:
-                continue
-
-            key = text[:500]
-
-            if key in seen:
-                continue
-
-            seen.add(
-                key
-            )
-
-            unique_text.append(
-                text
-            )
-
-        if len(unique_text) < 5:
-
-            fallback_queries = [
-
-                "lecture",
-                "course",
-                "material",
-                "concept",
-                "definition",
-            ]
-
-            for query in fallback_queries:
-
-                try:
-
-                    docs = retriever.invoke(
-                        query
-                    )
-
-                    if docs:
-
-                        all_docs.extend(
-                            docs
-                        )
-
-                except Exception as fallback_error:
-
-                    print(
-                        "Fallback search error:",
-                        fallback_error
-                    )
-
-        unique_text = []
-
-        seen = set()
-
-        for doc in all_docs:
-
-            if not hasattr(
-                doc,
-                "page_content",
-            ):
-
-                continue
-
-            text = (
-                doc.page_content
-                .strip()
-            )
-
-            if not text:
-                continue
-
-            key = text[:500]
-
-            if key in seen:
-                continue
-
-            seen.add(
-                key
-            )
-
-            unique_text.append(
-                text
-            )
-
-        context_parts = []
-
-        total_length = 0
-
-        is_youtube = request.material_id.startswith("youtube_")
-        if is_youtube and len(unique_text) > 10:
-            # Sample the whole video instead of sending an oversized transcript
-            # or taking only its opening minutes.
-            sample_indexes = {
-                round(index * (len(unique_text) - 1) / 9)
-                for index in range(10)
-            }
-            unique_text = [
-                text for index, text in enumerate(unique_text)
-                if index in sample_indexes
-            ]
-
-        MAX_CONTEXT = 12000 if is_youtube else 30000
-
-        for text in unique_text:
-
-            if total_length >= MAX_CONTEXT:
-
-                break
-
-            remaining = (
-                MAX_CONTEXT
-                - total_length
-            )
-
-            piece = text[
-                :remaining
-            ]
-
-            context_parts.append(
-                piece
-            )
-
-            total_length += len(
-                piece
-            )
-
-        context = "\n\n".join(
-            context_parts
-        )
-
-        if not context.strip():
-
-            raise ValueError(
-                "No readable content was retrieved "
-                "from this material."
-            )
-
-        prompt = f"""
-You are an expert instructional designer creating a useful
-Learning Map from a student's uploaded course material.
-
-Identify the real concepts that students should understand
-and practice, then group related concepts under meaningful
-main topics.
-
-IMPORTANT RULES:
-1. Prioritize concepts, principles, methods, algorithms, and skills actually explained.
-2. Group related ideas under meaningful parent topics.
-3. Main topics should be broad, coherent subjects, not every slide heading or bullet.
-4. Put definitions, examples, types, steps, and applications under the appropriate parent as subtopics.
-5. Ignore slide/page/section numbers and isolated numbering.
-6. Do not use generic headings such as "What We'll Cover", "Introduction",
-   "Overview", "Table of Contents", "Learning Objectives", "Key Takeaways",
-   "Next Steps", or "Thank You" as standalone topics. A descriptive heading
-   such as "Introduction to Machine Learning" is valid if it teaches a concept.
-7. Do not make every bullet point a separate main topic.
-8. Merge repeated or closely related concepts.
-   For video transcripts, use the timestamped excerpts sampled across the video
-   and combine related ideas into coherent course topics.
-9. Do not invent information that is not supported by the material.
-10. Return 1 to 10 meaningful main topics where the material supports them.
-11. Keep topic names concise and exam-friendly.
-12. Return valid JSON only, with no Markdown or commentary.
-
-Return this structure:
-{{
-  "topics": [
-    {{
-      "topic": "Data, Features and Labels",
-      "subtopics": [
-        "Features as model inputs",
-        "Labels as prediction targets",
-        "Numerical and categorical data",
-        "Unstructured data"
-      ]
-    }}
-  ]
-}}
-
-LEARNING MATERIAL:
-{context[:50000]}
-"""
-
-        response = llm.invoke(
-            prompt
-        )
-
-        print(
-            "\nRAW TOPIC RESPONSE:\n",
-            response.content
-        )
-
-        parsed = parse_llm_json(
-            response.content
-        )
-
-        if isinstance(
-            parsed,
-            dict
-        ):
-
-            topics = parsed.get(
-                "topics",
-                []
-            )
-
-        else:
-
-            topics = parsed
-
-        if not isinstance(
-            topics,
-            list
-        ):
-
-            raise ValueError(
-                "LLM did not return a valid topic list."
-            )
 
         cleaned_topics = []
 
@@ -2371,7 +2371,7 @@ LEARNING MATERIAL:
         )
 
         for index, item in enumerate(
-            cleaned_topics[:10],
+            cleaned_topics,
             start=1,
         ):
 
@@ -2389,7 +2389,7 @@ LEARNING MATERIAL:
 
         return {
             "topics":
-                cleaned_topics[:10]
+                cleaned_topics
         }
 
 

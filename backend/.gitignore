@@ -1,0 +1,13 @@
+__pycache__/
+.pytest_cache/
+.pytest-tmp/
+.venv/
+venv/
+chroma_db/
+uploaded_materials/
+data/
+*.sqlite3
+*.db
+*.log
+student_analytics/learner_state.json
+analytics_data.json

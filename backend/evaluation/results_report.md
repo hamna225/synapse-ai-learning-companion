@@ -22,7 +22,7 @@ The earlier 3/5 manual review is retained as historical pre-fix evidence only. I
 
 The spot check exposed citation noise: the tutor showed retrieved slides that were not cited in its answer. The UI now displays only source links whose citation numbers appear in the answer, preserving the original citation numbers.
 
-Visual extraction has since been added for PDF pages with images/vector graphics, embedded PowerPoint pictures, and native chart data. The vision integration and source-location preservation are covered by mocked ingestion tests; real Groq vision accuracy has not been benchmarked yet.
+Visual extraction has since been added for PDF pages with images/vector graphics, embedded PowerPoint pictures, and native chart data. The vision integration and source-location preservation are covered by mocked ingestion tests; real Grok vision accuracy has not been benchmarked yet.
 
 ## Framework-based answer and grounding metrics
 

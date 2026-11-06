@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./index.css";
+import ResumeAnalyzer from "./ResumeAnalyzer.jsx";
 
 /* =========================================================
    API
@@ -10,6 +11,16 @@ import "./index.css";
 const API_BASE = (
   import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000"
 ).replace(/\/+$/, "");
+
+function getStudentProfileId() {
+  let studentId = localStorage.getItem("synapse_student_id");
+  if (!studentId) {
+    studentId = globalThis.crypto?.randomUUID?.()
+      || `student_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem("synapse_student_id", studentId);
+  }
+  return studentId;
+}
 
 /* =========================================================
    REUSABLE COMPONENTS
@@ -222,7 +233,7 @@ function TutorPage() {
     id: 1,
     role: "assistant",
     content:
-      "Hi! I'm your AI Tutor. Upload your learning material and I'll study it before answering your questions.",
+      "Hi! Upload a PDF or reference document, then ask a question. I’ll answer from the document and link you to the source passages.",
   };
 
   /* -------------------------------------------------------
@@ -345,6 +356,8 @@ function TutorPage() {
 
   const [topicsLoading, setTopicsLoading] =
     useState(false);
+  const [topicsError, setTopicsError] = useState("");
+  const [topicsAttemptedFor, setTopicsAttemptedFor] = useState("");
 
   const [backendOnline, setBackendOnline] =
     useState(false);
@@ -544,7 +557,7 @@ function TutorPage() {
         },
 
         body: JSON.stringify({
-          student_id: "student_demo",
+          student_id: getStudentProfileId(),
         }),
       }
     );
@@ -687,7 +700,7 @@ function TutorPage() {
         id: Date.now(),
         role: "assistant",
         content:
-          "Hi! I'm your AI Tutor. Upload your learning material or start a new learning session.",
+          "Hi! Upload a PDF or reference document, then ask a question. I’ll answer from the document and link you to the source passages.",
       },
     ]);
 
@@ -757,7 +770,7 @@ function TutorPage() {
         id: Date.now(),
         role: "assistant",
         content:
-          "Hi! I'm your AI Tutor. Upload your learning material to start.",
+      "Hi! Upload a PDF or reference document, then ask a question. I’ll answer from the document and link you to the source passages.",
       },
     ]);
 
@@ -858,6 +871,8 @@ function TutorPage() {
     newMaterialId
   ) {
     try {
+      setTopicsAttemptedFor(newMaterialId);
+      setTopicsError("");
       setTopicsLoading(true);
 
       const response =
@@ -907,12 +922,19 @@ function TutorPage() {
       );
 
       setTopics([]);
+      setTopicsError(error?.message || "Topic discovery failed.");
 
     } finally {
 
       setTopicsLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (materialId && topicsAttemptedFor !== materialId && !topicsLoading) {
+      loadTopics(materialId);
+    }
+  }, [materialId, topicsAttemptedFor, topicsLoading]);
 
   /* -------------------------------------------------------
      YOUTUBE UPLOAD
@@ -1206,7 +1228,7 @@ function TutorPage() {
       );
 
       setUploadStatus(
-        "Reading your material and creating chunks..."
+        "Extracting and indexing text. Figure analysis follows in the background; the first upload may take longer while local embeddings initialize..."
       );
 
       /* Upload */
@@ -1249,7 +1271,9 @@ function TutorPage() {
       );
 
       setUploadStatus(
-        `${data.chunks} chunks are ready.`
+        data.visual_analysis_pending
+          ? `${data.chunks} text chunks are ready. Figure analysis continues in the background.`
+          : `${data.chunks} chunks are ready.`
       );
 
       setMessages(
@@ -1259,7 +1283,9 @@ function TutorPage() {
             id: Date.now(),
             role: "system",
             content:
-              `${data.filename} is ready. ${data.chunks} chunks have been indexed.`,
+              data.visual_analysis_pending
+                ? `${data.filename} is ready for text-based study. Figure analysis continues in the background.`
+                : `${data.filename} is ready. ${data.chunks} chunks have been indexed.`,
           },
         ]
       );
@@ -1267,15 +1293,20 @@ function TutorPage() {
       /* Analyze topics */
 
       setUploadStatus(
-        "Chunks are ready. Finding topics covered in your material..."
+        "Text is indexed. Finding topics; figure analysis continues in the background..."
       );
+
+      // Text is already searchable; do not block tutoring while topic discovery runs.
+      setUploading(false);
 
       await loadTopics(
         data.material_id
       );
 
       setUploadStatus(
-        "Your material is ready. You can start learning."
+        data.visual_analysis_pending
+          ? "Your material is ready for text-based study. Figure descriptions are processed separately."
+          : "Your material is ready. You can start learning."
       );
 
     } catch (error) {
@@ -1989,7 +2020,7 @@ function TutorPage() {
             ) : (
 
               <div className="sidebar-no-material">
-                Upload a lecture to begin.
+                Upload a PDF or reference document to begin.
               </div>
 
             )}
@@ -2007,12 +2038,11 @@ function TutorPage() {
               <div>
 
                 <strong>
-                  Personal AI Tutor
+                  Document-grounded assistant
                 </strong>
 
                 <span>
-                  Learn directly from your
-                  uploaded material.
+                  Ask questions and open source citations from your uploaded files.
                 </span>
 
               </div>
@@ -2041,14 +2071,14 @@ function TutorPage() {
 
               <div>
 
-                <h1>
-                  AI Tutor
-                </h1>
+                  <h1>
+                    Document Q&amp;A
+                  </h1>
 
                 <div className="tutor-header-meta">
 
                   <span>
-                    Personal Learning Companion
+                    Answers grounded in your documents
                   </span>
 
                   <span>
@@ -2150,8 +2180,7 @@ function TutorPage() {
                 LEARNING MAP — FIRST
                 ================================================= */}
 
-            {(topicsLoading ||
-              topics.length > 0) && (
+            {materialId && (
 
                 <div className="topics-panel">
 
@@ -2164,7 +2193,7 @@ function TutorPage() {
                       </span>
 
                       <strong>
-                        Topics in this material
+                        Topics in this document
                       </strong>
 
                       <span>
@@ -2198,9 +2227,7 @@ function TutorPage() {
 
                     </div>
 
-                  ) : (
-
-                    
+                  ) : topics.length > 0 ? (
 <div className="topic-list">
   {topics.map((topic, index) => {
     const normalized = normalizeTopic(topic, index);
@@ -2223,8 +2250,11 @@ function TutorPage() {
     );
   })}
 </div>
-
-
+                  ) : (
+                    <div className="topics-empty-state">
+                      <span>{topicsError || "No topics were identified in this document yet."}</span>
+                      <button type="button" onClick={() => loadTopics(materialId)} disabled={topicsLoading}>Try topic detection again</button>
+                    </div>
                   )}
 
                 </div>
@@ -2346,7 +2376,7 @@ function TutorPage() {
                         >
 
                           <div className="tutor-ai-label">
-                            AI Tutor
+                            Chat with Documents
                           </div>
 
                           {renderAnswer(
@@ -2437,7 +2467,7 @@ function TutorPage() {
                 disabled={
                   uploading
                 }
-                title="Upload learning material"
+                title="Upload a document"
               >
                 📎
               </button>
@@ -2482,7 +2512,7 @@ function TutorPage() {
                     uploading
                       ? "Studying your material..."
                       : materialId
-                        ? "Ask anything about your learning material..."
+                        ? "Ask a question about your uploaded document..."
                         : "Ask me anything..."
                   }
                   rows={1}
@@ -2527,7 +2557,7 @@ function TutorPage() {
               </span>
 
               <span>
-                Synapse AI Tutor
+                Synapse Document Q&amp;A
               </span>
 
             </div>
@@ -6272,50 +6302,33 @@ function DashboardPage({ setActivePage }) {
    ========================================================= */
 
 function App() {
-  const [activePage, setActivePage] = useState("dashboard");
+  const [activePage, setActivePage] = useState("analyzer");
   const [quizMaterial, setQuizMaterial] = useState(null);
 
   const navItems = [
-    {
-      id: "dashboard",
-      icon: "space_dashboard",
-      label: "Dashboard",
-    },
-
-    {
-      id: "tutor",
-      icon: "smart_toy",
-      label: "AI Tutor",
-    },
-
-    {
-      id: "materials",
-      icon: "menu_book",
-      label: "Learning Materials",
-    },
-
-    {
-      id: "quiz",
-      icon: "quiz",
-      label: "Adaptive Quiz",
-    },
-
-    {
-      id: "analytics",
-      icon: "insights",
-      label: "Learning Analytics",
-    },
-
-   
-
-    {
-      id: "settings",
-      icon: "settings",
-      label: "Settings",
-    },
+    { id: "analyzer", icon: "description", label: "Resume Analyzer" },
+    { id: "ats", icon: "fact_check", label: "ATS Checker" },
+    { id: "matcher", icon: "work", label: "Job Matcher" },
+    { id: "builder", icon: "edit_document", label: "Resume Builder" },
+    { id: "history", icon: "history", label: "Analysis History" },
+    { id: "documents", icon: "library_books", label: "Chat with Documents" },
   ];
 
   function renderPage() {
+    if (activePage === "documents") return <>
+      <main className="career-page">
+        <header className="ci-page-title">
+          <div>
+            <h1>Chat with Documents</h1>
+            <p className="ci-intro">Upload a PDF or presentation, ask questions, and follow citations back to the source pages. Conversations are saved in this browser.</p>
+          </div>
+        </header>
+      </main>
+      <TutorPage />
+    </>;
+    if (["analyzer", "ats", "matcher", "builder", "history"].includes(activePage)) {
+      return <ResumeAnalyzer page={activePage} setActivePage={setActivePage} />;
+    }
     switch (activePage) {
       case "tutor":
         return <TutorPage />;
@@ -6383,15 +6396,13 @@ function App() {
 
                 Synapse
 
-                <span>
-                  Adaptive AI
-                </span>
+                <span>Career AI</span>
 
               </div>
 
               <div className="brand-subtitle">
-                University Companion
-              </div>
+                Resume & Career Intelligence
+             </div>
 
             </div>
 
@@ -6459,36 +6470,6 @@ function App() {
 
         </div>
 
-        {/* PROFILE */}
-
-        <div className="profile-box">
-
-          <div className="profile-avatar">
-            H
-          </div>
-
-          <div className="profile-info">
-
-            <strong>
-              Hamna
-            </strong>
-
-            <span>
-              B.S. Computer Science • Year 2
-            </span>
-
-          </div>
-
-          <button className="logout-btn">
-
-            <span className="material-symbols-outlined">
-              logout
-            </span>
-
-          </button>
-
-        </div>
-
       </aside>
 
       {/* MAIN AREA */}
@@ -6496,60 +6477,6 @@ function App() {
       <div className="main-area">
 
         {/* TOPBAR */}
-
-        <header className="topbar">
-
-          {/* <div className="search-box">
-
-            <span className="material-symbols-outlined">
-              search
-            </span>
-
-            <input
-              type="text"
-              placeholder="Search course materials, questions, notes..."
-            />
-
-          </div> */}
-
-          <div className="topbar-right">
-
-            <button
-              className="ask-tutor-btn"
-              onClick={() =>
-                setActivePage(
-                  "tutor"
-                )
-              }
-            >
-
-              <span className="material-symbols-outlined">
-                auto_awesome
-              </span>
-
-              Ask Tutor
-
-            </button>
-
-            <button className="notification-btn">
-
-              <span className="material-symbols-outlined">
-                notifications
-              </span>
-
-              <span className="notification-count">
-                3
-              </span>
-
-            </button>
-
-            <div className="top-avatar">
-              H
-            </div>
-
-          </div>
-
-        </header>
 
         {/* PAGE */}
 

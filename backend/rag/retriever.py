@@ -1,3 +1,5 @@
+import os
+
 from langchain_chroma import Chroma
 from rag.embeddings import get_embeddings
 
@@ -6,7 +8,7 @@ def get_retriever(collection_name):
     embeddings = get_embeddings()
 
     vectorstore = Chroma(
-        persist_directory="chroma_db",
+        persist_directory=os.getenv("SYNAPSE_CHROMA_DB_PATH", "chroma_db"),
         collection_name=collection_name,
         embedding_function=embeddings
     )

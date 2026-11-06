@@ -20,7 +20,7 @@ Install the optional dependencies once from the backend folder:
 python -m pip install -r evaluation/requirements.txt
 ```
 
-Then run the smaller live RAGAS set (the tutor calls the configured Groq model, and RAGAS uses the same API key as its judge):
+Then run the smaller live RAGAS set (the tutor uses the configured text provider; RAGAS currently uses Groq as its judge and needs `GROQ_API_KEY`):
 
 ```powershell
 python -m evaluation.run_ragas_evaluation --material-id YOUR_MATERIAL_ID
@@ -28,7 +28,7 @@ python -m evaluation.run_ragas_evaluation --material-id YOUR_MATERIAL_ID
 
 The default set scores eight answerable questions with RAGAS faithfulness, answer relevancy, context precision, and context recall. It also records whether answers cite the expected slide and whether five off-material answers explicitly flag lack of coverage. The latter two are deterministic checks, not RAGAS metrics. Results are saved to `evaluation/ragas_results.json`. Run `--help` to select a smaller set with `--case-ids` or choose a different output path.
 
-The live run needs available Groq quota for both tutor generation and the evaluator model. If the API returns a rate-limit error, no full RAGAS result has been produced; retry after quota resets or set `GROQ_EVAL_MODEL` to another currently available Groq model. Do not substitute assumed values for missing scores.
+The live run needs available quota for the configured tutor model and the Groq evaluator. If either API returns a rate-limit error, no full RAGAS result has been produced; retry after quota resets or set `GROQ_EVAL_MODEL` to another currently available Groq model. Do not substitute assumed values for missing scores.
 
 To evaluate another upload, use its material ID. The same deck must be uploaded to the running app first so its collection exists in `chroma_db`.
 

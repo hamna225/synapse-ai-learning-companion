@@ -1,18 +1,9 @@
-import os
-from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from agents.model_provider import get_text_model
 from rag.retriever import get_retriever
-
-load_dotenv()
 
 
 def get_assessment_agent():
-
-    llm = ChatGroq(
-        model="openai/gpt-oss-20b",
-        temperature=0.2,
-        api_key=os.getenv("GROQ_API_KEY")
-    )
+    llm = get_text_model(temperature=0.2)
 
     retriever = get_retriever()
 

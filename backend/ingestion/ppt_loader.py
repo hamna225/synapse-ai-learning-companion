@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 from PIL import Image, ImageDraw
 from pptx import Presentation
@@ -80,7 +81,7 @@ def _chart_description(shape):
         return ""
 
 
-def _picture_contact_sheet(image_bytes_list):
+def _picture_contact_sheet(image_bytes_list, start_index=1):
     """Combine slide pictures into one labeled image for a single vision call."""
     tiles = []
     for index, image_bytes in enumerate(image_bytes_list, start=1):
@@ -89,7 +90,9 @@ def _picture_contact_sheet(image_bytes_list):
             image.thumbnail((560, 420))
             tile = Image.new("RGB", (580, 460), "white")
             tile.paste(image, ((580 - image.width) // 2, 30))
-            ImageDraw.Draw(tile).text((10, 8), f"Figure {index}", fill="black")
+            ImageDraw.Draw(tile).text(
+                (10, 8), f"Figure {start_index + index - 1}", fill="black"
+            )
             tiles.append(tile)
         except Exception as error:
             print(f"Could not read embedded PowerPoint image: {error}")
@@ -108,15 +111,15 @@ def _picture_contact_sheet(image_bytes_list):
     return output.getvalue()
 
 
-def load_ppt(file_path):
+def load_ppt(file_path, analyze_visuals=True):
     documents = []
+    visual_jobs = []
     presentation = Presentation(file_path)
-    visual_count = 0
-    max_visuals = int(os.getenv("VISION_MAX_VISUALS_PER_FILE", "20"))
 
     for slide_number, slide in enumerate(presentation.slides, start=1):
         slide_text = []
         picture_bytes = []
+        has_picture = False
         chart_text = []
 
         for shape in _iter_shapes(slide.shapes):
@@ -125,9 +128,10 @@ def load_ppt(file_path):
                 if text:
                     slide_text.append(text)
 
-            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE and visual_count < max_visuals:
-                picture_bytes.append(shape.image.blob)
-                visual_count += 1
+            if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                has_picture = True
+                if analyze_visuals:
+                    picture_bytes.append(shape.image.blob)
             elif getattr(shape, "has_chart", False):
                 description = _chart_description(shape)
                 if description:
@@ -137,33 +141,69 @@ def load_ppt(file_path):
         if chart_text:
             text += "\n\nChart data: " + "\n".join(chart_text)
 
-        visual_description = ""
-        if picture_bytes:
-            contact_sheet = _picture_contact_sheet(picture_bytes)
-            if contact_sheet:
-                visual_description = describe_visual(
-                    contact_sheet,
-                    f"PowerPoint slide {slide_number}",
-                    text,
+        picture_batches = []
+        if analyze_visuals and picture_bytes:
+            for batch_start in range(0, len(picture_bytes), 8):
+                batch = picture_bytes[batch_start:batch_start + 8]
+                contact_sheet = _picture_contact_sheet(
+                    batch,
+                    start_index=batch_start + 1,
                 )
+                if contact_sheet:
+                    picture_batches.append((
+                        contact_sheet,
+                        f"PowerPoint slide {slide_number}, figures "
+                        f"{batch_start + 1}-{batch_start + len(batch)}",
+                    ))
 
-        if visual_description:
-            text = (
-                f"{text.rstrip()}\n\n"
-                f"Figure or diagram description: {visual_description}"
-            ).strip()
-
-        if text.strip():
+        if text.strip() or picture_batches or (not analyze_visuals and has_picture):
+            slide_content = text
+            if not analyze_visuals and not slide_content.strip() and has_picture:
+                slide_content = f"Visual content on slide {slide_number}; figure analysis pending."
             documents.append(
                 Document(
-                    page_content=text,
+                    page_content=slide_content,
                     metadata={
                         "source": file_path,
                         "source_type": "ppt",
                         "slide": slide_number,
-                        "visual_content_extracted": bool(visual_description or chart_text),
+                        "visual_content_extracted": bool(chart_text),
+                        "visual_pending": bool(has_picture and not analyze_visuals),
                     },
                 )
             )
+            for contact_sheet, location in picture_batches:
+                visual_jobs.append((
+                    len(documents) - 1,
+                    contact_sheet,
+                    location,
+                    text,
+                ))
 
-    return documents
+    if analyze_visuals and visual_jobs:
+        try:
+            max_workers = max(
+                1,
+                min(8, int(os.getenv("VISION_CONCURRENCY", "4"))),
+            )
+        except ValueError:
+            max_workers = 4
+        max_workers = min(max_workers, len(visual_jobs))
+
+        def describe(job):
+            _, image, location, surrounding_text = job
+            return describe_visual(image, location, surrounding_text)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            descriptions = list(executor.map(describe, visual_jobs))
+
+        for job, visual_description in zip(visual_jobs, descriptions):
+            document = documents[job[0]]
+            if visual_description:
+                document.page_content = (
+                    f"{document.page_content.rstrip()}\n\n"
+                    f"Figure or diagram description: {visual_description}"
+                ).strip()
+                document.metadata["visual_content_extracted"] = True
+
+    return [document for document in documents if document.page_content.strip()]
